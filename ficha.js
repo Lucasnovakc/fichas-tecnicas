@@ -35,6 +35,7 @@
       tempo: '',
       dificuldade: 'facil',
       foto: null,
+      fotoAjuste: null,
       ingredientes: [{ nome: '', quantidade: null, unidade: 'g', obs: '' }],
       passos: [{ texto: '', foto: null }],
       conferencias: [''],
@@ -152,6 +153,25 @@
     return { ok: true };
   }
 
+  // Enquadramento de uma foto: ponto de foco x/y (0–100%), zoom (1–3) ou foto inteira (sem cortar).
+  function normalizarAjuste(a) {
+    const num = (v, min, max, padrao, casas) => {
+      const n = Number(v);
+      if (v === null || v === undefined || v === '' || !Number.isFinite(n)) return padrao;
+      const f = 10 ** casas;
+      return Math.round(Math.min(max, Math.max(min, n)) * f) / f;
+    };
+    const o = a && typeof a === 'object' ? a : {};
+    return { x: num(o.x, 0, 100, 50, 1), y: num(o.y, 0, 100, 50, 1), zoom: num(o.zoom, 1, 3, 1, 2), inteira: !!o.inteira };
+  }
+
+  function estiloFoto(ajuste) {
+    const a = normalizarAjuste(ajuste);
+    if (a.inteira) return 'object-fit:contain';
+    const pos = `${a.x}% ${a.y}%`;
+    return `object-fit:cover;object-position:${pos}` + (a.zoom > 1 ? `;transform:scale(${a.zoom});transform-origin:${pos}` : '');
+  }
+
   // Garante todos os campos com o tipo certo (fichas vindas de backup podem estar incompletas).
   function normalizarFicha(obj) {
     const txt = v => (v == null ? '' : String(v));
@@ -168,6 +188,7 @@
       tempo: txt(obj.tempo),
       dificuldade: DIFICULDADES[obj.dificuldade] ? obj.dificuldade : 'facil',
       foto: typeof obj.foto === 'string' && obj.foto ? obj.foto : null,
+      fotoAjuste: obj.fotoAjuste ? normalizarAjuste(obj.fotoAjuste) : null,
       ingredientes: lista(obj.ingredientes).map(i => ({
         nome: txt(i && i.nome),
         quantidade: i && Number.isFinite(i.quantidade) && i.quantidade >= 0 ? i.quantidade : null,
@@ -177,6 +198,7 @@
       passos: lista(obj.passos).map(p => ({
         texto: txt(p && p.texto),
         foto: p && typeof p.foto === 'string' && p.foto ? p.foto : null,
+        ...(p && p.ajuste ? { ajuste: normalizarAjuste(p.ajuste) } : {}),
       })),
       conferencias: lista(obj.conferencias).map(txt),
       observacoes: txt(obj.observacoes),
@@ -200,7 +222,7 @@
     SELOS, MAX_SELOS, UNIDADES, DIFICULDADES, VERSAO_BACKUP, CONFIG_PADRAO,
     gerarId, normalizar, novaFicha, duplicarFicha, parseQuantidade, formatarQuantidade,
     codigoDuplicado, buscarFichas, alternarSelo, moverItem, fotosDaFicha, fotosOrfas,
-    adicionarCategoria, renomearCategoria, contarUsoCategoria, validarBackup, normalizarFicha, juntarBackup,
+    adicionarCategoria, renomearCategoria, contarUsoCategoria, validarBackup, normalizarFicha, normalizarAjuste, estiloFoto, juntarBackup,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else window.Ficha = api;

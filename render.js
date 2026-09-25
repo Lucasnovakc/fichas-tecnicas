@@ -46,7 +46,7 @@
     const htmlIngredientes = ingredientes.map((i, n) => `<li><span class="f-num">${n + 1}</span><span class="f-ing">${esc(i.nome)}${i.obs.trim() ? `<small>${esc(i.obs)}</small>` : ''}</span><span class="f-qtd">${esc(F.formatarQuantidade(i.quantidade, i.unidade))}</span></li>`).join('');
     const htmlPassos = passos.map((p, n) => {
       const u = url(p.foto);
-      return `<div class="f-passo${u ? '' : ' so-texto'}"><span class="f-num">${n + 1}</span>${u ? `<img src="${esc(u)}" alt="">` : ''}<p>${esc(p.texto)}</p></div>`;
+      return `<div class="f-passo${u ? '' : ' so-texto'}"><span class="f-num">${n + 1}</span>${u ? `<div class="f-passo-foto"><img src="${esc(u)}" alt="" style="${F.estiloFoto(p.ajuste)}"></div>` : ''}<p>${esc(p.texto)}</p></div>`;
     }).join('');
 
     return `<article class="folha">
@@ -68,7 +68,7 @@
       <h2>INGREDIENTES${ficha.rendimento.trim() ? ' — ' + esc(ficha.rendimento) : ''}</h2>
       <ol>${htmlIngredientes}</ol>
     </div>
-    ${foto ? `<div class="f-foto"><img src="${esc(foto)}" alt=""></div>` : ''}
+    ${foto ? `<div class="f-foto"><img src="${esc(foto)}" alt="" style="${F.estiloFoto(ficha.fotoAjuste)}"></div>` : ''}
   </section>
   ${passos.length ? `<section class="f-passos"><h2>PASSO A PASSO DA MONTAGEM <span>(ordem de montagem)</span></h2><div class="f-grade">${htmlPassos}</div></section>` : ''}
   <section class="f-final">

@@ -70,6 +70,12 @@ legend { color: var(--vermelho); font-weight: 800; letter-spacing: 1px; text-tra
 .foto-vazia { display: grid; place-items: center; color: #666; font-size: 12px; border: 1px dashed #444; }
 .item-ing input.invalido { outline: 2px solid #ffb400; }
 
+dialog:has(.ajuste-moldura) { max-width: 640px; }
+.dialogo-titulo { margin: 0 0 12px; }
+#ajuste-zoom { accent-color: var(--vermelho); padding: 0; border: 0; background: none; }
+.ajuste-moldura { width: min(580px, 80vw); overflow: hidden; background: #000; border-radius: 8px; cursor: grab; touch-action: none; margin-bottom: 8px; }
+.ajuste-moldura:active { cursor: grabbing; }
+.ajuste-moldura img { width: 100%; height: 100%; display: block; user-select: none; pointer-events: none; }
 @media (max-width: 1000px) {
   .editor { grid-template-columns: 1fr; }
   .editor-previa { position: static; overflow-x: auto; }
@@ -116,13 +122,15 @@ legend { color: var(--vermelho); font-weight: 800; letter-spacing: 1px; text-tra
 .f-ing { flex: 1; font-weight: 700; text-transform: uppercase; font-size: .95em; }
 .f-ing small { display: block; color: #C8102E; font-weight: 700; text-transform: none; font-size: .85em; }
 .f-qtd { font-weight: 800; white-space: nowrap; }
-.f-foto img { width: 100%; height: 19em; object-fit: cover; border-radius: .8em; border: .25em solid #111; display: block; }
+.f-foto { height: 19em; border-radius: .8em; border: .25em solid #111; overflow: hidden; background: #111; }
+.f-foto img { width: 100%; height: 100%; display: block; }
 .f-passos { padding: 0 1.6em 1em; }
 .f-passos h2 span { font-weight: 600; text-transform: lowercase; }
 .f-grade { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8em; }
 .f-passo { position: relative; background: #f3f3f3; border-radius: .6em; overflow: hidden; border-top: .3em solid #C8102E; }
-.f-passo img { width: 100%; height: 7.5em; object-fit: cover; display: block; }
-.f-passo .f-num { position: absolute; top: .4em; left: .4em; box-shadow: 0 0 0 .15em #fff; }
+.f-passo-foto { height: 7.5em; overflow: hidden; background: #111; }
+.f-passo-foto img { width: 100%; height: 100%; display: block; }
+.f-passo .f-num { position: absolute; top: .4em; left: .4em; z-index: 1; box-shadow: 0 0 0 .15em #fff; }
 .f-passo p { margin: 0; padding: .5em .6em .6em; font-size: .85em; white-space: pre-line; }
 .f-passo.so-texto p { padding: .6em .6em .6em 2.6em; min-height: 3em; }
 .f-final { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; padding: 0 1.6em 1em; }

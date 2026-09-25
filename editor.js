@@ -51,6 +51,7 @@
     return `<div class="foto-campo">
       ${u ? `<img src="${esc(u)}" alt="">` : '<div class="foto-vazia">sem foto</div>'}
       <label class="btn">${u ? 'Trocar foto' : 'Enviar foto'}<input type="file" accept="image/*" hidden ${attrs}></label>
+      ${u ? `<button type="button" class="btn" data-acao="ajustar" ${attrs}>Ajustar</button>` : ''}
       ${u ? `<button type="button" class="btn" data-acao="rmfoto" ${attrs}>Remover</button>` : ''}
     </div>`;
   }
@@ -122,6 +123,72 @@
       <fieldset><legend>Observações</legend>
         <textarea data-campo="observacoes" rows="3" placeholder="Opcional">${esc(f.observacoes)}</textarea>
       </fieldset>`;
+  }
+
+  // Janela de enquadramento: arrastar escolhe a parte que aparece, a barra dá zoom,
+  // "Foto inteira" mostra a foto toda sem cortar. Devolve o ajuste ou null (cancelado).
+  function ajustarFoto(url, atual, razao) {
+    const d = document.getElementById('dialogo');
+    const a = F.normalizarAjuste(atual);
+    d.innerHTML = `<h3 class="dialogo-titulo">Ajustar foto</h3>
+      <div class="ajuste-moldura" style="aspect-ratio:${razao}"><img src="${esc(url)}" alt="" draggable="false"></div>
+      <p class="dica">Arraste a foto para escolher a parte que aparece na ficha.</p>
+      <label class="campo"><span>Zoom</span><input type="range" id="ajuste-zoom" min="1" max="3" step="0.05" value="${a.zoom}"></label>
+      <label class="chk"><input type="checkbox" id="ajuste-inteira" ${a.inteira ? 'checked' : ''}>Foto inteira (sem cortar)</label>
+      <div class="dialogo-botoes">
+        <button type="button" class="btn" value="centro">Centralizar</button>
+        <button type="button" class="btn" value="cancelar">Cancelar</button>
+        <button type="button" class="btn primario" value="salvar">Salvar</button>
+      </div>`;
+    const moldura = d.querySelector('.ajuste-moldura');
+    const img = moldura.querySelector('img');
+    const zoom = d.querySelector('#ajuste-zoom');
+    const inteira = d.querySelector('#ajuste-inteira');
+    const aplicar = () => { img.style.cssText = F.estiloFoto(a); zoom.disabled = a.inteira; };
+    aplicar();
+
+    let arraste = null;
+    moldura.onpointerdown = e => {
+      if (a.inteira) return;
+      arraste = { x: e.clientX, y: e.clientY, ax: a.x, ay: a.y };
+      try { moldura.setPointerCapture(e.pointerId); } catch {}
+    };
+    moldura.onpointermove = e => {
+      if (!arraste) return;
+      // quanto da foto sobra fora da moldura em cada eixo (é isso que o arraste percorre)
+      const W = moldura.clientWidth, H = moldura.clientHeight;
+      const nw = img.naturalWidth || W, nh = img.naturalHeight || H;
+      const cobre = Math.max(W / nw, H / nh);
+      const sobraX = Math.max(nw * cobre - W, 0) + W * (a.zoom - 1);
+      const sobraY = Math.max(nh * cobre - H, 0) + H * (a.zoom - 1);
+      Object.assign(a, F.normalizarAjuste({
+        ...a,
+        x: sobraX ? arraste.ax - (e.clientX - arraste.x) / sobraX * 100 : a.x,
+        y: sobraY ? arraste.ay - (e.clientY - arraste.y) / sobraY * 100 : a.y,
+      }));
+      aplicar();
+    };
+    moldura.onpointerup = moldura.onpointercancel = () => { arraste = null; };
+    zoom.oninput = () => { a.zoom = Number(zoom.value); aplicar(); };
+    inteira.onchange = () => { a.inteira = inteira.checked; aplicar(); };
+
+    return new Promise(ok => {
+      d.onclick = e => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        if (b.value === 'centro') {
+          Object.assign(a, F.normalizarAjuste(null));
+          zoom.value = 1;
+          inteira.checked = false;
+          aplicar();
+          return;
+        }
+        d.close();
+        ok(b.value === 'salvar' ? { ...a } : null);
+      };
+      d.oncancel = () => ok(null);
+      d.showModal();
+    });
   }
 
   const marcarSalvo = t => { const el = document.getElementById('salvo'); if (el) el.textContent = t; };
@@ -207,8 +274,10 @@
       if (passo) {
         if (!alvo.passos.includes(passo)) return; // passo apagado durante o envio
         passo.foto = id;
+        passo.ajuste = null;
       } else {
         alvo.foto = id;
+        alvo.fotoAjuste = null;
       }
       if (ficha === alvo) {
         desenharForm();
@@ -232,9 +301,23 @@
       case 'up': ficha[lista] = F.moverItem(ficha[lista], i, -1); break;
       case 'down': ficha[lista] = F.moverItem(ficha[lista], i, 1); break;
       case 'rmfoto':
-        if (b.dataset.foto === 'principal') ficha.foto = null;
-        else ficha.passos[i].foto = null;
+        if (b.dataset.foto === 'principal') { ficha.foto = null; ficha.fotoAjuste = null; }
+        else { ficha.passos[i].foto = null; ficha.passos[i].ajuste = null; }
         break;
+      case 'ajustar': {
+        const principal = b.dataset.foto === 'principal';
+        const passo = principal ? null : ficha.passos[i];
+        const url = App.urlFoto(principal ? ficha.foto : passo.foto);
+        if (!url) return;
+        // mesma proporção da moldura na folha (medida na prévia)
+        const el = document.querySelector(principal ? '#previa .f-foto' : '#previa .f-passo-foto');
+        const razao = el && el.clientHeight ? (el.clientWidth / el.clientHeight).toFixed(3) : (principal ? 1.31 : 1.61);
+        const alvo = ficha;
+        const novo = await ajustarFoto(url, principal ? ficha.fotoAjuste : passo.ajuste, razao);
+        if (!novo || ficha !== alvo) return;
+        if (principal) ficha.fotoAjuste = novo; else passo.ajuste = novo;
+        break;
+      }
       default: return;
     }
     desenharForm();
