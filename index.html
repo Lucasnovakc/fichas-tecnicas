@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fichas Técnicas — Barão</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-topo">
+    <div class="app-marca"><span class="app-selo">FT</span><div><b>FICHAS TÉCNICAS</b><small>Padrão • Qualidade • Sabor</small></div></div>
+    <nav>
+      <button class="btn-nav" data-nav="lista">Fichas</button>
+      <button class="btn-nav" data-nav="config">Configurações</button>
+    </nav>
+  </header>
+  <main id="tela"></main>
+  <div id="area-impressao" aria-hidden="true"></div>
+  <dialog id="dialogo"></dialog>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="ficha.js"></script>
+  <script src="render.js"></script>
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+  <script src="lista.js"></script>
+  <script src="editor.js"></script>
+  <script src="config.js"></script>
+
+</body>
+</html>
